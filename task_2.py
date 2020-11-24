@@ -1,3 +1,5 @@
+import functools
+@functools.total_ordering
 class Version:
     def __init__(self, version):
         self.version = version
@@ -27,14 +29,8 @@ class Version:
         if isinstance(other, Version):
             return self.version == other.version
         else:
-            return False
-    
-    def __ne__(self, other):
-        if isinstance(other, Version):
-            return not self == other
-        else:
-            return True
-    
+            return False        
+
     def __lt__(self, other):
         if isinstance(other, Version):
             a, b = self.equalize(self.reform(self.version), self.reform(other.version))
@@ -51,24 +47,6 @@ class Version:
         else:
             raise TypeError("Only Version objects are allowed") 
     
-    def __le__(self, other):
-        if isinstance(other, Version):
-            return self == other or self < other
-        else:
-            raise TypeError("Only Version objects are allowed") 
-    
-    def __gt__(self, other):
-        if isinstance(other, Version):
-            return not self <= other
-        else:
-            raise TypeError("Only Version objects are allowed")  
-    
-    def __ge__(self, other):
-        if isinstance(other, Version):
-            return not self < other
-        else:
-            raise TypeError("Only Version objects are allowed") 
-
 def main():
     to_test = [
         ("1.0.0", "2.0.0"),
