@@ -1,27 +1,30 @@
-import functools
-@functools.total_ordering
+from functools import total_ordering
+
+
+@total_ordering
 class Version:
     def __init__(self, version):
         self.version = version
          
-    def reform(self, ver):
-        #метод преобразовывает строку в лист, разбитый по точкам и с видоизмененными значениями
-        #все случаи, где используются пререлизные версии, для простоты сравнения, заменяются на символы,
-        #имеющие меньшее значение по таблице юникода, чем цифры
-        #а там где указан дефис, заменяется на точку
-        pre = ("pre-alfa", "alpha", "beta", "rc", "a", "b", "c", "d", "f", "-")
-        for i, item in enumerate(pre):
-            #в ascii точка - 46ой элемент, чтобы последний элемент pre (-) попал на точку, используется формула ниже
-            ver = ver.replace(item, chr(i + 47 - len(pre)))
-        return ver.split(".")
+    def reform(self, tokens):
+    # Метод разбивает строку по точкам в лист, преобразуя элементы
+    # все случаи, где используются пререлизные версии, заменяются на символы,
+    # имеющие меньшее значение по таблице юникода, чем цифры
+    # там где указан дефис, заменяется на точку
+        # В ascii точка - 46ой элемент, чтобы "-" попал на точку, нужен оффсет  
+        CHAR_OFFSET = 47       
+        PRE_ZERO_TOKENS = ("pre-alfa", "alpha", "beta", "rc", "a", "b", "c", "d", "f", "-")
+        for index, item in enumerate(PRE_ZERO_TOKENS):            
+            tokens = tokens.replace(item, chr(index + CHAR_OFFSET - len(PRE_ZERO_TOKENS)))
+        return tokens.split(".")
     
     def equalize(self, a, b):
-        #метод приводит сравниваемые листы версий к одному виду, дополняя нулями меньший
+        # метод приводит сравниваемые листы версий к одному виду, дополняя нулями меньший
         if len(a) > len(b):
-            for i in range(len(a) - len(b)):
+            for _ in range(len(a) - len(b)):
                 b.append("0")
         elif len(a) < len(b):
-            for i in range(len(b) - len(a)):
+            for _ in range(len(b) - len(a)):
                 a.append("0")
         return a, b
         
@@ -33,20 +36,21 @@ class Version:
 
     def __lt__(self, other):
         if isinstance(other, Version):
-            a, b = self.equalize(self.reform(self.version), self.reform(other.version))
-            if len(a) < len(b):
-                return True
-            elif len(a) > len(b):
-                return False
-            else:
-                for i in range(len(a)):
-                    if a[i] > b[i]:
-                        return False
-                    elif a[i] < b[i]:
-                        return True     
+            # ver_1 и ver_2 - дополненые по необходости нулевыми токенами (методом equalize),
+            # разбитые по точкам на листы с преобразованными токенами (методом reform)             
+            ver_1, ver_2 = self.equalize(self.reform(self.version), self.reform(other.version))
+            for ver_1_token, ver_2_token in zip(ver_1, ver_2):
+                # если токен длиннее, то он больше
+                # если токены равны по длине и не равны по значению
+                # возвращает результат прямого сравнения двух токенов           
+                if len(ver_1_token) != len(ver_2_token):                    
+                    return len(ver_1_token) < len(ver_2_token)                
+                elif ver_1_token != ver_2_token:                    
+                    return ver_1_token < ver_2_token
         else:
             raise TypeError("Only Version objects are allowed") 
-    
+
+
 def main():
     to_test = [
         ("1.0.0", "2.0.0"),
